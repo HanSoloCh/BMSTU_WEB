@@ -52,7 +52,7 @@
 ---
 
 ## h. Диаграмма БД
-![components](img/DB.jpg)
+![db-diagram](img/DB.jpg)
 
 ---
 
@@ -62,4 +62,5 @@
 ---
 
 ## j. Экраны будущего web-приложения
+![screens](img/screens.jpg)
 
