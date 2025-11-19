@@ -1,0 +1,1703 @@
+openapi: 3.0.0
+info:
+  title: library API
+  version: 0.2.0
+  description: Документация для API библиотеки
+
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: auth
+  - name: users
+  - name: apus
+  - name: bbks
+  - name: authors
+  - name: publishers
+  - name: books
+  - name: issuances
+  - name: reservations
+  - name: favorites
+  - name: queues
+
+paths:
+  /api/v2/auth/register:
+    post:
+      tags: [ auth ]
+      summary: Регистрация нового пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        '201':
+          description: Пользователь успешно зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        '400':
+          description: Невалидные данные
+        '409':
+          description: Пользователь с таким email уже существует
+
+  /api/v2/auth/login:
+    post:
+      tags: [ auth ]
+      summary: Вход в систему
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        '200':
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        '400':
+          description: Невалидные данные
+        '401':
+          description: Неверные учетные данные
+
+  /api/v2/apus:
+    post:
+      tags: [ apus ]
+      summary: Создать новый АПУ
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApuModel"
+      responses:
+        '201':
+          description: АПУ успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApuModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ apus ]
+      summary: Получить список АПУ с пагинацией и полнотекстовым поиском
+      description: |
+        Получение списка АПУ с пагинацией. Поддерживает фильтрацию:
+        - q — полнотекстовый поиск по термину.
+        Без параметров возвращает все АПУ.
+      parameters:
+        - name: q
+          in: query
+          description: Строка для полнотекстового поиска
+          required: false
+          schema:
+            type: string
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ApuModel"
+        '400':
+          description: Неверные параметры запроса
+        '404':
+          description: Ничего не найдено
+
+
+  /api/v2/apus/{id}:
+    get:
+      tags: [ apus ]
+      summary: Получить АПУ по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApuModel"
+        '404':
+          description: АПУ не найден
+
+    patch:
+      tags: [ apus ]
+      summary: Обновить АПУ
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApuModel"
+      responses:
+        '204':
+          description: АПУ успешно обновлен
+        '400':
+          description: Невалидные данные
+        '404':
+          description: АПУ не найден
+
+
+    delete:
+      tags: [ apus ]
+      summary: Удалить АПУ
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: АПУ успешно удален
+        '404':
+          description: АПУ не найден
+
+  /api/v2/authors:
+    post:
+      tags: [ authors ]
+      summary: Создать нового автора
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorModel"
+      responses:
+        '201':
+          description: Автор успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ authors ]
+      summary: Получить список авторов с пагинацией и полнотекстовым поиском
+      description: |
+        Получение списка авторов с пагинацией. Поддерживает фильтрацию:
+        - q — полнотекстовый поиск по имени.
+        Без параметров возвращает всех авторов.
+      parameters:
+        - name: q
+          in: query
+          description: Строка для полнотекстового поиска
+          required: false
+          schema:
+            type: string
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AuthorModel"
+        '400':
+          description: Неверные параметры запроса
+        '404':
+          description: Ничего не найдено
+
+
+  /api/v2/authors/{id}:
+    get:
+      tags: [ authors ]
+      summary: Получить автора по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorModel"
+        '404':
+          description: Автор не найден
+
+    patch:
+      tags: [ authors ]
+      summary: Обновить автора
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorModel"
+      responses:
+        '204':
+          description: Автор успешно обновлен
+        '400':
+          description: Невалидные данные
+        '404':
+          description: Автор не найден
+
+
+    delete:
+      tags: [ authors ]
+      summary: Удалить автора
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Автор успешно удален
+        '404':
+          description: Автор не найден
+
+  /api/v2/bbks:
+    post:
+      tags: [ bbks ]
+      summary: Создать новый BBK
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BbkModel"
+      responses:
+        '201':
+          description: BBK успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BbkModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ bbks ]
+      summary: Получить список ББК с пагинацией и полнотекстовым поиском
+      description: |
+        Получение ББК с пагинацией. Поддерживает фильтрацию:
+        - q — полнотекстовый поиск по коду.
+        Без параметров возвращает весь ББК.
+      parameters:
+        - name: q
+          in: query
+          description: Строка для полнотекстового поиска
+          required: false
+          schema:
+            type: string
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BbkModel"
+        '400':
+          description: Неверные параметры запроса
+        '404':
+          description: Ничего не найдено
+
+  /api/v2/bbks/{id}:
+    get:
+      tags: [ bbks ]
+      summary: Получить BBK по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BbkModel"
+        '404':
+          description: BBK не найден
+
+    patch:
+      tags: [ bbks ]
+      summary: Обновить BBK
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BbkModel"
+      responses:
+        '204':
+          description: BBK успешно обновлен
+        '400':
+          description: Невалидные данные
+        '404':
+          description: BBK не найден
+
+    delete:
+      tags: [ bbks ]
+      summary: Удалить BBK
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: BBK успешно удален
+        '404':
+          description: BBK не найден
+
+  /api/v2/books:
+    post:
+      tags: [ books ]
+      summary: Создать новую книгу
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookModel"
+      responses:
+        '201':
+          description: Книга успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ books ]
+      summary: Получить список книг с пагинацией и фильтрацией
+      description: |
+        Получение списка книг с пагинацией. Поддерживает фильтрацию по различным критериям:
+        - authorId - поиск по автору
+        - bbkId - поиск по ББК
+        - publisherId - поиск по издателю
+        - q - полнотекстовый поиск
+        Без параметров фильтрации - возвращает все книги
+      parameters:
+        - name: authorId
+          in: query
+          description: ID автора для поиска
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+
+        - name: bbkId
+          in: query
+          description: ID ББК для поиска
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+
+        - name: publisherId
+          in: query
+          description: ID издателя для поиска
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+
+        - name: q
+          in: query
+          description: Строка для полнотекстового поиска
+          required: false
+          schema:
+            type: string
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BookModel"
+        '400':
+          description: Неверные параметры запроса
+        '404':
+          description: Ничего не найдено
+
+  /api/v2/books/{id}:
+    get:
+      tags: [ books ]
+      summary: Получить книгу по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookModel"
+        '404':
+          description: Книга не найдена
+
+    patch:
+      tags: [ books ]
+      summary: Обновить книгу
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookModel"
+      responses:
+        '204':
+          description: Книга успешно обновлена
+        '400':
+          description: Невалидные данные
+        '404':
+          description: Книга не найдена
+
+    delete:
+      tags: [ books ]
+      summary: Удалить книгу
+      security:
+        - bearerAuth: [ ]
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Книга успешно удалена
+        '404':
+          description: Книга не найдена
+
+  /api/v2/publishers:
+    post:
+      tags: [ publishers ]
+      summary: Создать нового издателя
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublisherModel"
+      responses:
+        '201':
+          description: Издатель успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublisherModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ publishers ]
+      summary: Получить список издательств с пагинацией и полнотекстовым поиском
+      description: |
+        Получение списка издательств с пагинацией. Поддерживает фильтрацию:
+        - q — полнотекстовый поиск по названию.
+        Без параметров возвращает всех издателей.
+      parameters:
+        - name: q
+          in: query
+          description: Строка для полнотекстового поиска
+          required: false
+          schema:
+            type: string
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PublisherModel"
+        '400':
+          description: Неверные параметры запроса
+        '404':
+          description: Ничего не найдено
+
+  /api/v2/publishers/{id}:
+    get:
+      tags: [ publishers ]
+      summary: Получить издателя по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublisherModel"
+        '404':
+          description: Издатель не найден
+
+    patch:
+      tags: [ publishers ]
+      summary: Обновить издателя
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublisherModel"
+      responses:
+        '204':
+          description: Издатель успешно обновлен
+        '400':
+          description: Невалидные данные
+        '404':
+          description: Издатель не найден
+
+
+    delete:
+      tags: [ publishers ]
+      summary: Удалить издателя
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Издатель успешно удален
+        '404':
+          description: Издатель не найден
+
+  /api/v2/users:
+    post:
+      tags: [ users ]
+      summary: Создать нового пользователя
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserModel"
+      responses:
+        '201':
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ users ]
+      summary: Получить список пользователей с пагинацией и полнотекстовым поиском
+      description: |
+        Получение списка пользователей с пагинацией. Поддерживает фильтрацию:
+        - q — полнотекстовый поиск по иномеру телефона.
+        Без параметров возвращает всех пользователей.
+      parameters:
+        - name: q
+          in: query
+          description: Строка для полнотекстового поиска
+          required: false
+          schema:
+            type: string
+
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserModel"
+        '400':
+          description: Неверные параметры запроса
+        '404':
+          description: Ничего не найдено
+
+  /api/v2/users/{id}:
+    get:
+      tags: [ users ]
+      summary: Получить пользователя по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserModel"
+        '404':
+          description: Пользователь не найден
+
+    patch:
+      tags: [ users ]
+      summary: Обновить пользователя
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserModel"
+      responses:
+        '204':
+          description: Пользователь успешно обновлен
+        '400':
+          description: Невалидные данные
+        '404':
+          description: Пользователь не найден
+
+    delete:
+      tags: [ users ]
+      summary: Удалить пользователя
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Пользователь успешно удален
+        '404':
+          description: Пользователь не найден
+
+  /api/v2/issuances:
+    post:
+      tags: [ issuances ]
+      summary: Создать новую выдачу книги
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssuanceModel"
+      responses:
+        '201':
+          description: Выдача успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssuanceModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ issuances ]
+      summary: Получить выдачи с фильтром по пользователю и/или книге с пагинацией
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: bookId
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/IssuanceModel"
+        '404':
+          description: Нет выдач для указанных фильтров
+
+  /api/v2/issuances/{id}:
+    patch:
+      tags: [ issuances ]
+      summary: Обновить данные выдачи
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IssuanceModel"
+      responses:
+        '204':
+          description: Выдача успешно обновлена
+        '400':
+          description: Невалидные данные
+        '404':
+          description: Выдача не найдена
+
+    delete:
+      tags: [ issuances ]
+      summary: Удалить выдачу
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        '204':
+          description: Выдача успешно удалена
+        '404':
+          description: Выдача не найдена
+
+  /api/v2/reservations:
+    post:
+      tags: [ reservations ]
+      summary: Создать новую бронь книги
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationModel"
+      responses:
+        '201':
+          description: Бронь успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReservationModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ reservations ]
+      summary: Получить брони с фильтром по пользователю и/или книге с пагинацией
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: bookId
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReservationModel"
+        '404':
+          description: Нет броней для указанных фильтров
+
+  /api/v2/reservations/{id}:
+    patch:
+      tags: [ reservations ]
+      summary: Обновить данные брони
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationModel"
+      responses:
+        '204':
+          description: Бронь успешно обновлена
+        '400':
+          description: Невалидные данные
+        '404':
+          description: Бронь не найдена
+
+    delete:
+      tags: [ reservations ]
+      summary: Удалить бронь
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        '204':
+          description: Бронь успешно удалена
+        '404':
+          description: Бронь не найдена
+
+  /api/v2/queues:
+    post:
+      tags: [ queues ]
+      summary: Создать новую запись в очереди
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueueModel"
+      responses:
+        '201':
+          description: Запись в очереди успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueueModel"
+        '400':
+          description: Невалидные данные
+
+    get:
+      tags: [ queues ]
+      summary: Получить записи очереди с фильтром по пользователю и/или книге с пагинацией
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: bookId
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/QueueModel"
+        '404':
+          description: Нет записей в очереди для указанных фильтров
+
+  /api/v2/queues/{id}:
+    patch:
+      tags: [ queues ]
+      summary: Обновить данные записи в очереди
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QueueModel"
+      responses:
+        '204':
+          description: Запись в очереди успешно обновлена
+        '400':
+          description: Невалидные данные
+        '404':
+          description: Запись в очереди не найдена
+
+    delete:
+      tags: [ queues ]
+      summary: Удалить запись из очереди
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        '204':
+          description: Запись в очереди успешно удалена
+        '404':
+          description: Запись в очереди не найдена
+
+  /api/v2/user/{userId}/favorites/{bookId}:
+    post:
+      tags: [ favorites ]
+      summary: Добавить книгу в избранное пользователя
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        '201':
+          description: Книга успешно добавлена в избранное
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                    format: uuid
+                    description: ID пользователя
+                  bookId:
+                    type: string
+                    format: uuid
+                    description: ID книги
+        '400':
+          description: Невалидные параметры
+        '404':
+          description: Пользователь или книга не найдены
+
+    delete:
+      tags: [ favorites ]
+      summary: Удалить книгу из избранного пользователя
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: bookId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        '204':
+          description: Книга успешно удалена из избранного
+        '400':
+          description: Невалидные параметры
+        '404':
+          description: Запись в избранном не найдена
+
+  /api/v2/user/{userId}/favorites:
+    get:
+      tags: [ favorites ]
+      summary: Получить список избранных книг пользователя с пагинацией
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BookModel"
+        '404':
+          description: Пользователь не найден или нет избранных книг
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT токен для аутентификации
+
+  schemas:
+    UUID:
+      type: string
+      format: uuid
+
+    LocalDate:
+      type: string
+      format: date
+      example: "2023-12-31"
+    
+    Instant:
+      type: string
+      format: date-time
+      example: "2023-01-15T12:00:00Z"
+
+    LoginRequest:
+      type: object
+      required: [ phoneNumber, password ]
+      properties:
+        phoneNumber:
+          type: string
+          pattern: "^\\+?[78][0-9]{10}$"
+          example: "89104189450"
+        password:
+          type: string
+          example: "password"
+      example:
+        phoneNumber: "89167749090"
+        password: "password"
+
+    RegisterRequest:
+      type: object
+      required: [ name, surname, password, phoneNumber ]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: "Иван"
+        surname:
+          type: string
+          minLength: 1
+          example: "Иванов"
+        secondName:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "Иванович"
+        password:
+          type: string
+          minLength: 1
+          example: "securePassword123"
+        phoneNumber:
+          type: string
+          pattern: "^\\+?[78][0-9]{10}$"
+          example: "+79161234567"
+      example:
+        name: "Иван"
+        surname: "Иванов"
+        password: "password"
+        phoneNumber: "+79104563245"
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT токен
+        user:
+          $ref: "#/components/schemas/UserModel"
+      example:
+        token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        user:
+          id: "aa0a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+          name: "Иван"
+          surname: "Иванов"
+          email: "ivanov@example.com"
+          phoneNumber: "+79104563245"
+          role: "READER"
+
+
+    UserRole:
+      type: string
+      enum: [ READER, LIBRARIAN, ADMIN ]
+      example: "READER"
+
+    ApuModel:
+      type: object
+      required: [ term, bbkId ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        term:
+          type: string
+          minLength: 1
+          example: "Компьютерные науки"
+        bbkId:
+          $ref: "#/components/schemas/UUID"
+      example:
+        id: "550a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        term: "Компьютерные науки"
+        bbkId: "660a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+
+    AuthorModel:
+      type: object
+      required: [ name ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+          minLength: 1
+          example: "Лев Толстой"
+      example:
+        id: "770a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        name: "Лев Толстой"
+
+    BbkModel:
+      type: object
+      required: [ code, description ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        code:
+          type: string
+          minLength: 1
+          example: "81.2Рус"
+        description:
+          type: string
+          minLength: 1
+          example: "Русская литература"
+      example:
+        id: "880a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        code: "81.2Рус"
+        description: "Русская литература"
+
+    BookModel:
+      type: object
+      required: [ title, authors, bbkId ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        title:
+          type: string
+          minLength: 1
+          example: "Война и мир"
+        annotation:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "Роман-эпопея Льва Толстого"
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/UUID"
+          minItems: 1
+          example: [ "770a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f" ]
+        publisherId:
+          $ref: "#/components/schemas/UUID"
+          nullable: true
+        publicationYear:
+          type: integer
+          nullable: true
+          minimum: 0
+          maximum: 2023
+          example: 2020
+        codeISBN:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "978-5-389-06256-6"
+        bbkId:
+          $ref: "#/components/schemas/UUID"
+        mediaType:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "Твёрдый переплёт"
+        volume:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "Том 1"
+        language:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "Русский"
+        originalLanguage:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "Русский"
+        copies:
+          type: integer
+          minimum: 0
+          default: 0
+          example: 5
+        availableCopies:
+          type: integer
+          minimum: 0
+          example: 3
+      example:
+        id: "990a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        title: "Война и мир"
+        authors: [ "770a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f" ]
+        bbkId: "880a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        copies: 10
+        availableCopies: 10
+
+    QueueModel:
+      type: object
+      required: [ bookId, userId, createdAt ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        bookId:
+          $ref: "#/components/schemas/UUID"
+        userId:
+          $ref: "#/components/schemas/UUID"
+        createdAt:
+          $ref: "#/components/schemas/Instant"
+        position:
+          type: integer
+          example: "1"
+      example:
+        id: "990a3e98-7b0d-4b5e-8b9a-3a1b2c4f5e6f"
+        bookId: "990a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        userId: "aa0a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        createdAt: "2023-01-15T12:00:00Z"
+        position:
+
+    IssuanceModel:
+      type: object
+      required: [ bookId, userId, issuanceDate, returnDate ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        bookId:
+          $ref: "#/components/schemas/UUID"
+        userId:
+          $ref: "#/components/schemas/UUID"
+        issuanceDate:
+          $ref: "#/components/schemas/LocalDate"
+        returnDate:
+          $ref: "#/components/schemas/LocalDate"
+      example:
+        id: "990a3e98-sb0d-4b5e-8b9a-3a1b2c4f5e6f"
+        bookId: "990a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        userId: "aa0a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        issuanceDate: "2023-01-15"
+        returnDate: "2023-02-15"
+
+    PublisherModel:
+      type: object
+      required: [ name ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+          minLength: 1
+          example: "АСТ"
+        description:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "Крупное издательство"
+        email:
+          type: string
+          nullable: true
+          format: email
+          example: "contact@ast.ru"
+        phoneNumber:
+          type: string
+          nullable: true
+          pattern: "^\\+?[78][0-9]{10}$"
+          example: "+79161234567"
+      example:
+        name: "АСТ"
+        email: "contact@ast.ru"
+        phoneNumber: "+79161234567"
+
+    UserModel:
+      type: object
+      required: [ name, surname, email, phoneNumber ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+          minLength: 1
+          example: "Иван"
+        surname:
+          type: string
+          minLength: 1
+          example: "Иванов"
+        secondName:
+          type: string
+          nullable: true
+          minLength: 1
+          example: "Иванович"
+        email:
+          type: string
+          format: email
+          example: "ivanov@example.com"
+        phoneNumber:
+          type: string
+          pattern: "^\\+?[78][0-9]{10}$"
+          example: "+79161234567"
+        role:
+          $ref: "#/components/schemas/UserRole"
+      example:
+        id: "aa0a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        name: "Иван"
+        surname: "Иванов"
+        email: "ivanov@example.com"
+        phoneNumber: "+79104563245"
+        role: "READER"
+
+    ReservationModel:
+      type: object
+      required: [ bookId, userId, reservationDate, cancelDate ]
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        bookId:
+          $ref: "#/components/schemas/UUID"
+        userId:
+          $ref: "#/components/schemas/UUID"
+        reservationDate:
+          $ref: "#/components/schemas/LocalDate"
+        cancelDate:
+          $ref: "#/components/schemas/LocalDate"
+      example:
+        id: "990a3e98-sb0d-4b5e-8b9a-3a1b2c4f5e6f"
+        bookId: "990a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        userId: "aa0a3e98-7b0d-4b5e-8b9a-3a1b2c4d5e6f"
+        reservationDate: "2023-03-01"
+        cancelDate: "2023-03-15"
+

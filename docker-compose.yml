@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: library_db
+    environment:
+      POSTGRES_USER: libraryuser
+      POSTGRES_PASSWORD: secret123
+      POSTGRES_DB: librarydb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./library_app
+      dockerfile: ./api/Dockerfile
+    container_name: library_api
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./library_app/api:/app/api
+      - gradle_cache:/root/.gradle
+    depends_on:
+      - db
+
+  adminer:
+    image: adminer
+    container_name: library_adminer
+    restart: always
+    ports:
+      - "8081:8080"
+
+  nginx:
+    image: nginx:latest
+    container_name: library_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./static:/var/www/project/static:ro
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  gradle_cache:
