@@ -1,9 +1,9 @@
 version: "3.9"
-
 services:
-  db:
-    image: postgres:16
-    container_name: library_db
+  db_master:
+    image: postgres:16-alpine
+    container_name: library_db_master
+    restart: unless-stopped
     environment:
       POSTGRES_USER: libraryuser
       POSTGRES_PASSWORD: secret123
@@ -11,39 +11,142 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_master_data:/var/lib/postgresql/data
+      - ./db/init-master.sql:/docker-entrypoint-initdb.d/01-init.sql
+    command: >
+      postgres
+      -c wal_level=replica
+      -c max_wal_senders=10
+      -c hot_standby=on
+      -c max_connections=200
+      
 
-  api:
+  db_slave:
+    image: postgres:16-alpine
+    container_name: library_db_slave
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: secret123
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_slave_data:/var/lib/postgresql/data
+      - ./db/init-slave.sh:/docker-entrypoint-initdb.d/init-slave.sh
+    command: postgres -c hot_standby=on
+    depends_on:
+      - db_master
+
+# ====================== БЭКЕНДЫ ======================
+  api_master:
     build:
       context: ./library_app
       dockerfile: ./api/Dockerfile
-    container_name: library_api
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./library_app/api:/app/api
-      - gradle_cache:/root/.gradle
+    container_name: library_api_master
+    environment:
+      - DB_URL=jdbc:postgresql://db_master:5432/librarydb
+      - DB_USER=libraryuser
+      - DB_PASSWORD=secret123
+      - DB_READ_ONLY=false
+      - PORT=8080
     depends_on:
-      - db
-
+      - db_master
+  api_slave1:
+    build:
+      context: ./library_app
+      dockerfile: ./api/Dockerfile
+    container_name: library_api_slave1
+    environment:
+      - DB_URL=jdbc:postgresql://db_master:5432/librarydb  # Slaves подключаются к master (read-only пользователь)
+      - DB_USER=readonlyuser
+      - DB_PASSWORD=readonly123
+      - DB_READ_ONLY=true
+      - PORT=8081
+    depends_on:
+      - db_master
+  api_slave2:
+    build:
+      context: ./library_app
+      dockerfile: ./api/Dockerfile
+    container_name: library_api_slave2
+    environment:
+      - DB_URL=jdbc:postgresql://db_master:5432/librarydb
+      - DB_USER=readonlyuser
+      - DB_PASSWORD=readonly123
+      - DB_READ_ONLY=true
+      - PORT=8082
+    depends_on:
+      - db_master
+  api_mirror:
+    build:
+      context: ./library_app
+      dockerfile: ./api/Dockerfile
+    container_name: library_api_mirror
+    environment:
+      - DB_URL=jdbc:postgresql://db_master:5432/librarydb
+      - DB_USER=readonlyuser
+      - DB_PASSWORD=readonly123
+      - DB_READ_ONLY=true
+      - BASE_PATH=/mirror
+      - PORT=8080
+    depends_on:
+      - db_slave
+  # ====================== МОНИТОРИНГ ======================
+  loki:
+    image: grafana/loki:3.2.1
+    container_name: library_loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - ./loki/config.yaml:/etc/loki/local-config.yaml
+  promtail:
+    image: grafana/promtail:3.2.1
+    container_name: library_promtail
+    volumes:
+      - ./promtail/config.yaml:/etc/promtail/config.yaml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: library_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    depends_on:
+      - loki
+  # ====================== ВСПОМОГАТЕЛЬНЫЕ ======================
   adminer:
     image: adminer
     container_name: library_adminer
     restart: always
     ports:
-      - "8081:8080"
-
+      - "8084:8080"
   nginx:
-    image: nginx:latest
+    image: nginx:alpine
     container_name: library_nginx
     ports:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./static:/var/www/project/static:ro
+      - nginx_logs:/var/log/nginx
     depends_on:
-      - api
-
+      - api_master
+      - api_slave1
+      - api_slave2
+      - api_mirror
+      - grafana
 volumes:
-  postgres_data:
+  postgres_master_data:
+  postgres_slave_data:
+  grafana_data:
+  nginx_logs:
   gradle_cache:

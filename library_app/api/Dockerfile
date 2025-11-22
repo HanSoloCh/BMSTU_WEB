@@ -20,7 +20,7 @@ ENV GRADLE_OPTS="-Dorg.gradle.jvmargs=-Xmx1g"
 RUN gradle :api:clean :api:shadowJ -x test --no-daemon --stacktrace
 
 # ---------- РАНТАЙМ ----------
-FROM openjdk:17-jdk-slim AS runtime
+FROM eclipse-temurin:17-jre-jammy AS runtime
 
 WORKDIR /app
 COPY --from=build /app/api/build/libs/*.jar app.jar

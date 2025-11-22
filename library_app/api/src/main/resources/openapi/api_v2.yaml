@@ -5,7 +5,7 @@ info:
   description: Документация для API библиотеки
 
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost
 
 tags:
   - name: auth
