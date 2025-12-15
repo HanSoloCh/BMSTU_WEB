@@ -47,6 +47,7 @@ fun Application.module() {
         slf4jLogger()
         modules(appModule(environment.config))
     }
+
     routing {
         route("/api") {
             version1()

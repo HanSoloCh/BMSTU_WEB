@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   db_master:
     image: postgres:16-alpine
@@ -19,7 +18,8 @@ services:
       -c max_wal_senders=10
       -c hot_standby=on
       -c max_connections=200
-      
+    networks:
+      - p_network
 
   db_slave:
     image: postgres:16-alpine
@@ -35,8 +35,9 @@ services:
     command: postgres -c hot_standby=on
     depends_on:
       - db_master
+    networks:
+      - p_network
 
-# ====================== БЭКЕНДЫ ======================
   api_master:
     build:
       context: ./library_app
@@ -48,21 +49,37 @@ services:
       - DB_PASSWORD=secret123
       - DB_READ_ONLY=false
       - PORT=8080
+      - INSTANCE_NAME=api_master
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
     depends_on:
       - db_master
+      - loki
+    logging:
+      driver: "json-file"
+    networks:
+      - p_network
+
   api_slave1:
     build:
       context: ./library_app
       dockerfile: ./api/Dockerfile
     container_name: library_api_slave1
     environment:
-      - DB_URL=jdbc:postgresql://db_master:5432/librarydb  # Slaves подключаются к master (read-only пользователь)
+      - DB_URL=jdbc:postgresql://db_master:5432/librarydb
       - DB_USER=readonlyuser
       - DB_PASSWORD=readonly123
       - DB_READ_ONLY=true
       - PORT=8081
+      - INSTANCE_NAME=api_slave1
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
     depends_on:
       - db_master
+      - loki
+    logging:
+      driver: "json-file"
+    networks:
+      - p_network
+
   api_slave2:
     build:
       context: ./library_app
@@ -74,8 +91,16 @@ services:
       - DB_PASSWORD=readonly123
       - DB_READ_ONLY=true
       - PORT=8082
+      - INSTANCE_NAME=api_slave2
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
     depends_on:
       - db_master
+      - loki
+    logging:
+      driver: "json-file"
+    networks:
+      - p_network
+
   api_mirror:
     build:
       context: ./library_app
@@ -88,47 +113,62 @@ services:
       - DB_READ_ONLY=true
       - BASE_PATH=/mirror
       - PORT=8080
+      - INSTANCE_NAME=api_mirror
+      - LOKI_URL=http://loki:3100/loki/api/v1/push
     depends_on:
       - db_slave
-  # ====================== МОНИТОРИНГ ======================
+      - loki
+    logging:
+      driver: "json-file"
+    networks:
+      - p_network
+
   loki:
-    image: grafana/loki:3.2.1
-    container_name: library_loki
+    image: grafana/loki:latest
+    container_name: loki
+    restart: always
     ports:
       - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
+    command: -config.file=/etc/loki/config.yaml
     volumes:
-      - ./loki/config.yaml:/etc/loki/local-config.yaml
-  promtail:
-    image: grafana/promtail:3.2.1
-    container_name: library_promtail
-    volumes:
-      - ./promtail/config.yaml:/etc/promtail/config.yaml
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-    command: -config.file=/etc/promtail/config.yaml
-    depends_on:
-      - loki
+      - ./loki/config.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    user: "root"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+    networks:
+      - p_network
+
   grafana:
-    image: grafana/grafana:11.2.0
+    image: grafana/grafana:latest
     container_name: library_grafana
     ports:
       - "3000:3000"
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_SERVER_ROOT_URL=http://localhost:3000/monitoring
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - p_network
     depends_on:
       - loki
-  # ====================== ВСПОМОГАТЕЛЬНЫЕ ======================
+
+
   adminer:
     image: adminer
     container_name: library_adminer
     restart: always
     ports:
       - "8084:8080"
+    networks:
+      - p_network
+
   nginx:
     image: nginx:alpine
     container_name: library_nginx
@@ -136,17 +176,24 @@ services:
       - "80:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./static:/var/www/project/static:ro
       - nginx_logs:/var/log/nginx
+      - ./static:/var/www/project/static:ro
     depends_on:
       - api_master
       - api_slave1
       - api_slave2
       - api_mirror
       - grafana
+    networks:
+      - p_network
+
 volumes:
   postgres_master_data:
   postgres_slave_data:
   grafana_data:
   nginx_logs:
-  gradle_cache:
+  loki_data:
+
+networks:
+  p_network:
+    driver: bridge

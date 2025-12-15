@@ -44,6 +44,10 @@ dependencies {
     implementation(project(":domain"))
     implementation(project(":data"))
 
+    implementation("com.github.loki4j:loki-logback-appender:1.5.1")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.4")
+    implementation("ch.qos.logback:logback-classic:1.4.11")
+
     implementation(libs.kotlinx.coroutines.core)
 
     // Для Postgres
@@ -66,7 +70,7 @@ dependencies {
     // Для Koin
     implementation(libs.koin.ktor)
     implementation(libs.koin.logger.slf4j) // Logger для Koin
-    implementation(libs.logback.classic)
+//    implementation(libs.logback.classic)
 
     // Exposed
     implementation(libs.exposed.core)

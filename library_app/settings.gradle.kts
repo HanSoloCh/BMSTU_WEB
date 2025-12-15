@@ -3,6 +3,7 @@ pluginManagement {
         gradlePluginPortal()
         mavenCentral()
         google()
+        maven { url = uri("https://repo.jetbrains.com/kotlin") }
     }
 }
 
@@ -12,6 +13,7 @@ dependencyResolutionManagement {
         gradlePluginPortal()
         mavenCentral()
         google()
+        maven { url = uri("https://repo.jetbrains.com/kotlin") }
     }
 }
 

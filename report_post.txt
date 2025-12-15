@@ -13,34 +13,34 @@ Document Path:          /api/v1/books
 Document Length:        0 bytes
 
 Concurrency Level:      10
-Time taken for tests:   0.079 seconds
+Time taken for tests:   0.089 seconds
 Complete requests:      100
 Failed requests:        0
 Non-2xx responses:      100
 Total transferred:      14100 bytes
 Total body sent:        16800
 HTML transferred:       0 bytes
-Requests per second:    1273.76 [#/sec] (mean)
-Time per request:       7.851 [ms] (mean)
-Time per request:       0.785 [ms] (mean, across all concurrent requests)
-Transfer rate:          175.39 [Kbytes/sec] received
-                        208.98 kb/s sent
-                        384.37 kb/s total
+Requests per second:    1127.51 [#/sec] (mean)
+Time per request:       8.869 [ms] (mean)
+Time per request:       0.887 [ms] (mean, across all concurrent requests)
+Transfer rate:          155.25 [Kbytes/sec] received
+                        184.98 kb/s sent
+                        340.23 kb/s total
 
 Connection Times (ms)
               min  mean[+/-sd] median   max
-Connect:        0    0   0.2      0       1
-Processing:     2    6   2.2      6      13
-Waiting:        2    6   2.2      6      13
-Total:          2    7   2.2      6      13
+Connect:        0    0   0.3      0       1
+Processing:     4    8   2.4      7      17
+Waiting:        4    7   2.3      7      17
+Total:          4    8   2.4      7      17
 
 Percentage of the requests served within a certain time (ms)
-  50%      6
-  66%      7
-  75%      8
-  80%      9
-  90%     10
-  95%     10
-  98%     12
-  99%     13
- 100%     13 (longest request)
+  50%      7
+  66%      8
+  75%      9
+  80%     10
+  90%     11
+  95%     12
+  98%     16
+  99%     17
+ 100%     17 (longest request)

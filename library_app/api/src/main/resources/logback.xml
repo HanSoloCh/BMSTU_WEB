@@ -1,19 +1,79 @@
-<configuration scan="true" scanPeriod="30 seconds">
-    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
-        <file>./logs/app.log</file>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- JSON аппендер для консоли -->
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <timestamp>
+                    <fieldName>timestamp</fieldName>
+                    <timeZone>UTC</timeZone>
+                </timestamp>
+                <logLevel>
+                    <fieldName>level</fieldName>
+                </logLevel>
+                <loggerName>
+                    <fieldName>logger</fieldName>
+                </loggerName>
+                <message>
+                    <fieldName>message</fieldName>
+                </message>
+                <mdc/>
+                <stackTrace>
+                    <fieldName>stack_trace</fieldName>
+                </stackTrace>
+                <threadName>
+                    <fieldName>thread</fieldName>
+                </threadName>
+            </providers>
         </encoder>
     </appender>
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
-        </encoder>
+    <!-- Аппендер для Loki -->
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>http://loki:3100/loki/api/v1/push</url>
+            <connectionTimeoutMs>10000</connectionTimeoutMs>
+            <requestTimeoutMs>30000</requestTimeoutMs>
+        </http>
+        <batch>
+            <maxItems>1000</maxItems>
+            <maxBytes>4194304</maxBytes>
+            <timeout>5</timeout>
+        </batch>
+        <format>
+            <label>
+                <pattern>app=library,instance=${INSTANCE_NAME:-unknown},level=%level,logger=%logger{20}</pattern>
+                <readMarkers>true</readMarkers>
+                <readMdc>true</readMdc>
+            </label>
+            <message>
+                <pattern>{"timestamp": "%d{yyyy-MM-dd'T'HH:mm:ss.SSS'Z'}", "level": "%level", "logger": "%logger", "thread": "%thread", "message": "%message", "exception": "%ex"}%n</pattern>
+            </message>
+            <sortByTime>true</sortByTime>
+        </format>
+        <backoff>
+            <minMillis>1000</minMillis>
+            <maxMillis>60000</maxMillis>
+            <multiplier>2</multiplier>
+        </backoff>
     </appender>
 
+    <!-- Настройки логирования -->
     <root level="INFO">
-        <appender-ref ref="FILE" />
-        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="JSON"/>
+        <appender-ref ref="LOKI"/>
     </root>
+
+    <!-- Логгер для вашего приложения -->
+    <logger name="org.example" level="DEBUG" additivity="false">
+        <appender-ref ref="JSON"/>
+        <appender-ref ref="LOKI"/>
+    </logger>
+
+    <!-- Логгер для Ktor -->
+    <logger name="io.ktor" level="INFO">
+        <appender-ref ref="JSON"/>
+        <appender-ref ref="LOKI"/>
+    </logger>
+
 </configuration>
