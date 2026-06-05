@@ -172,10 +172,13 @@ services:
   nginx:
     image: nginx:alpine
     container_name: library_nginx
+    restart: always
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
       - nginx_logs:/var/log/nginx
       - ./static:/var/www/project/static:ro
     depends_on:

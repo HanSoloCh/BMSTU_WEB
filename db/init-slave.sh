@@ -14,7 +14,7 @@ fi
 
 echo "Starting base backup from $MASTER_HOST ..."
 
-# Очищаем каталог (на всякий случай)
+# Очищаем каталог
 rm -rf $PGDATA/*
 chmod 700 $PGDATA
 
@@ -28,10 +28,8 @@ pg_basebackup \
     -P \
     --wal-method=stream
 
-# Создаём файл standby.signal (это новый способ с PG12+)
 touch "$PGDATA/standby.signal"
 
-# На всякий случай добавляем primary_conninfo в postgresql.auto.conf (не в postgresql.conf!)
 cat <<EOF >> "$PGDATA/postgresql.auto.conf"
 primary_conninfo = 'host=$MASTER_HOST port=5432 user=$REPL_USER password=$REPL_PASS application_name=library_slave'
 hot_standby = on

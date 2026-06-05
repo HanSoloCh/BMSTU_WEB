@@ -2,14 +2,19 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Статус сервера</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статус сервера Nginx</title>
     <link rel="stylesheet" href="/static/css/status.css">
 </head>
 <body>
     <div class="container">
         <h1>Статус сервера Nginx</h1>
         <div id="status-data">Загрузка...</div>
-        <button onclick="loadStatus()">Обновить</button>
+        <div class="controls">
+            <button onclick="loadStatus()">Обновить</button>
+            <button onclick="toggleAutoRefresh()" id="auto-refresh-btn">Остановить автообновление</button>
+        </div>
+        <div id="last-update"></div>
     </div>
     <script src="/static/js/status.js"></script>
 </body>

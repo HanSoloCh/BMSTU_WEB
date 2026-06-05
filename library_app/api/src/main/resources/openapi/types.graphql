@@ -1,0 +1,349 @@
+scalar UUID
+scalar Date
+scalar DateTime
+scalar JSON
+
+enum UserRole {
+  READER
+  LIBRARIAN
+  ADMIN
+}
+
+input LoginRequestInput {
+  phoneNumber: String!
+  password: String!
+}
+
+input RegisterRequestInput {
+  name: String!
+  surname: String!
+  secondName: String
+  password: String!
+  phoneNumber: String!
+}
+
+type AuthResponse {
+  token: String
+  user: User!
+}
+
+type User {
+  id: UUID
+  name: String!
+  surname: String!
+  secondName: String
+  email: String!
+  phoneNumber: String!
+  role: UserRole
+}
+
+input UserCreateInput {
+  name: String!
+  surname: String!
+  secondName: String
+  email: String!
+  phoneNumber: String!
+  role: UserRole
+}
+
+input UserUpdateInput {
+  name: String
+  surname: String
+  secondName: String
+  email: String
+  phoneNumber: String
+  role: UserRole
+}
+
+type Apu {
+  id: UUID
+  term: String!
+  bbk: Bbk!
+}
+
+input ApuCreateInput {
+  term: String!
+  bbkId: UUID!
+}
+
+input ApuUpdateInput {
+  term: String
+  bbkId: UUID
+}
+
+type Author {
+  id: UUID
+  name: String!
+}
+
+input AuthorCreateInput {
+  name: String!
+}
+
+input AuthorUpdateInput {
+  name: String
+}
+
+type Bbk {
+  id: UUID
+  code: String!
+  description: String!
+}
+
+input BbkCreateInput {
+  code: String!
+  description: String!
+}
+
+input BbkUpdateInput {
+  code: String
+  description: String
+}
+
+type Publisher {
+  id: UUID
+  name: String!
+  description: String
+  email: String
+  phoneNumber: String
+}
+
+input PublisherCreateInput {
+  name: String!
+  description: String
+  email: String
+  phoneNumber: String
+}
+
+input PublisherUpdateInput {
+  name: String
+  description: String
+  email: String
+  phoneNumber: String
+}
+
+type Book {
+  id: UUID
+  title: String!
+  annotation: String
+  authors: [Author!]!
+  publisher: Publisher
+  publicationYear: Int
+  codeISBN: String
+  bbk: Bbk!
+  mediaType: String
+  volume: String
+  language: String
+  originalLanguage: String
+  copies: Int
+  availableCopies: Int
+}
+
+input BookCreateInput {
+  title: String!
+  annotation: String
+  authorIds: [UUID!]!
+  publisherId: UUID
+  publicationYear: Int
+  codeISBN: String
+  bbkId: UUID!
+  mediaType: String
+  volume: String
+  language: String
+  originalLanguage: String
+  copies: Int
+  availableCopies: Int
+}
+
+input BookUpdateInput {
+  title: String
+  annotation: String
+  authorIds: [UUID!]
+  publisherId: UUID
+  publicationYear: Int
+  codeISBN: String
+  bbkId: UUID
+  mediaType: String
+  volume: String
+  language: String
+  originalLanguage: String
+  copies: Int
+  availableCopies: Int
+}
+
+type Issuance {
+  id: UUID
+  book: Book!
+  user: User!
+  issuanceDate: Date!
+  returnDate: Date!
+}
+
+input IssuanceCreateInput {
+  bookId: UUID!
+  userId: UUID!
+  issuanceDate: Date!
+  returnDate: Date!
+}
+
+input IssuanceUpdateInput {
+  bookId: UUID
+  userId: UUID
+  issuanceDate: Date
+  returnDate: Date
+}
+
+type Reservation {
+  id: UUID
+  book: Book!
+  user: User!
+  reservationDate: Date!
+  cancelDate: Date!
+}
+
+input ReservationCreateInput {
+  bookId: UUID!
+  userId: UUID!
+  reservationDate: Date!
+  cancelDate: Date!
+}
+
+input ReservationUpdateInput {
+  bookId: UUID
+  userId: UUID
+  reservationDate: Date
+  cancelDate: Date
+}
+
+type Queue {
+  id: UUID
+  book: Book!
+  user: User!
+  createdAt: DateTime!
+  position: Int
+}
+
+input QueueCreateInput {
+  bookId: UUID!
+  userId: UUID!
+  createdAt: DateTime!
+  position: Int
+}
+
+input QueueUpdateInput {
+  bookId: UUID
+  userId: UUID
+  createdAt: DateTime
+  position: Int
+}
+
+type FavoriteRef {
+  user: User!
+  book: Book!
+}
+
+type ApuListResponse {
+  content: [Apu!]
+}
+
+type AuthorListResponse {
+  content: [Author!]
+}
+
+type BbkListResponse {
+  content: [Bbk!]
+}
+
+type PublisherListResponse {
+  content: [Publisher!]
+}
+
+type BookListResponse {
+  content: [Book!]
+}
+
+type UserListResponse {
+  content: [User!]
+}
+
+type IssuanceListResponse {
+  content: [Issuance!]
+}
+
+type ReservationListResponse {
+  content: [Reservation!]
+}
+
+type QueueListResponse {
+  content: [Queue!]
+}
+
+type Query {
+  apus(q: String, page: Int, size: Int): ApuListResponse!
+  apu(id: UUID!): Apu!
+
+  authors(q: String, page: Int, size: Int): AuthorListResponse!
+  author(id: UUID!): Author!
+
+  bbks(q: String, page: Int, size: Int): BbkListResponse!
+  bbk(id: UUID!): Bbk!
+
+  books(authorId: UUID, bbkId: UUID, publisherId: UUID, q: String, page: Int, size: Int): BookListResponse!
+  book(id: UUID!): Book!
+
+  publishers(q: String, page: Int, size: Int): PublisherListResponse!
+  publisher(id: UUID!): Publisher!
+
+  users(q: String, page: Int, size: Int): UserListResponse!
+  user(id: UUID!): User!
+
+  issuances(userId: UUID, bookId: UUID, page: Int, size: Int): IssuanceListResponse!
+  reservations(userId: UUID, bookId: UUID, page: Int, size: Int): ReservationListResponse!
+  queues(userId: UUID, bookId: UUID, page: Int, size: Int): QueueListResponse!
+
+  favorites(userId: UUID!, page: Int, size: Int): BookListResponse!
+}
+
+type Mutation {
+  register(input: RegisterRequestInput!): AuthResponse!
+  login(input: LoginRequestInput!): AuthResponse!
+
+  createApu(input: ApuCreateInput!): Apu!
+  updateApu(id: UUID!, input: ApuUpdateInput!): JSON!
+  deleteApu(id: UUID!): JSON!
+
+  createAuthor(input: AuthorCreateInput!): Author!
+  updateAuthor(id: UUID!, input: AuthorUpdateInput!): JSON!
+  deleteAuthor(id: UUID!): JSON!
+
+  createBbk(input: BbkCreateInput!): Bbk!
+  updateBbk(id: UUID!, input: BbkUpdateInput!): JSON!
+  deleteBbk(id: UUID!): JSON!
+
+  createBook(input: BookCreateInput!): Book!
+  updateBook(id: UUID!, input: BookUpdateInput!): JSON!
+  deleteBook(id: UUID!): JSON!
+
+  createPublisher(input: PublisherCreateInput!): Publisher!
+  updatePublisher(id: UUID!, input: PublisherUpdateInput!): JSON!
+  deletePublisher(id: UUID!): JSON!
+
+  createUser(input: UserCreateInput!): User!
+  updateUser(id: UUID!, input: UserUpdateInput!): JSON!
+  deleteUser(id: UUID!): JSON!
+
+  createIssuance(input: IssuanceCreateInput!): Issuance!
+  updateIssuance(id: UUID!, input: IssuanceUpdateInput!): JSON!
+  deleteIssuance(id: UUID!): JSON!
+
+  createReservation(input: ReservationCreateInput!): Reservation!
+  updateReservation(id: UUID!, input: ReservationUpdateInput!): JSON!
+  deleteReservation(id: UUID!): JSON!
+
+  createQueue(input: QueueCreateInput!): Queue!
+  updateQueue(id: UUID!, input: QueueUpdateInput!): JSON!
+  deleteQueue(id: UUID!): JSON!
+
+  addFavorite(userId: UUID!, bookId: UUID!): FavoriteRef!
+  removeFavorite(userId: UUID!, bookId: UUID!): JSON!
+}
